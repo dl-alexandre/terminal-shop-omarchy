@@ -241,6 +241,7 @@ Panel {
   function selectTab(index) {
     tabIndex = Math.max(0, Math.min(8, Number(index)))
     cursorActive = true
+    if (panelFlick) panelFlick.contentY = 0
     if (tabIndex === 6 && hasAccount && tokens.length === 0 && apps.length === 0)
       refreshSecurity()
   }
@@ -1038,6 +1039,7 @@ Panel {
               spacing: Style.space(8)
 
               Text {
+                id: accountCaption
                 text: "ACCOUNT"
                 color: root.dim
                 font.family: root.fontFamily
@@ -1045,9 +1047,31 @@ Panel {
                 anchors.verticalCenter: parent.verticalCenter
               }
 
+              Rectangle {
+                id: environmentBadge
+                width: Style.space(72)
+                height: Style.space(24)
+                radius: Style.cornerRadius
+                color: root.activeAccount && root.activeAccount.environment === "production"
+                  ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.16)
+                  : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.14)
+                border.width: 1
+                border.color: root.activeAccount && root.activeAccount.environment === "production" ? root.urgent : root.accent
+                anchors.verticalCenter: parent.verticalCenter
+
+                Text {
+                  anchors.centerIn: parent
+                  text: root.activeAccount && root.activeAccount.environment === "production" ? "PROD" : "DEV"
+                  color: root.foreground
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.caption
+                  font.bold: true
+                }
+              }
+
               ComboBox {
                 id: accountCombo
-                width: Math.max(160, parent.width - 90)
+                width: Math.max(120, parent.width - accountCaption.implicitWidth - environmentBadge.width - parent.spacing * 2)
                 model: root.accountLabels
                 currentIndex: {
                   for (var i = 0; i < root.accounts.length; i++)
@@ -1065,12 +1089,12 @@ Panel {
             spacing: Style.space(4)
 
             Repeater {
-              model: ["Overview", "Shop", "Cart", "Orders", "Subscriptions", "Account", "Security", "Developer", "API"]
+              model: ["Home", "Shop", "Cart", "Orders", "Plans", "Account", "Security", "Developer", "API"]
 
               Rectangle {
                 required property string modelData
                 required property int index
-                width: (tabs.width - tabs.spacing * 4) / 5
+                width: (tabs.width - tabs.spacing * 2) / 3
                 height: Style.spacing.controlHeight
                 radius: Style.cornerRadius
                 color: index === root.tabIndex ? root.track : "transparent"
@@ -1083,6 +1107,7 @@ Panel {
                   color: root.foreground
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.caption
+                  font.bold: index === root.tabIndex
                   elide: Text.ElideRight
                 }
 
