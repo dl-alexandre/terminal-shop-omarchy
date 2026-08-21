@@ -39,28 +39,43 @@ Column {
     width: parent.width
     spacing: Style.space(10)
 
-    Text { text: "OVERVIEW"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    Row {
+      spacing: Style.space(8)
+      Rectangle { width: Style.space(3); height: Style.space(18); radius: Style.space(2); color: root.accent; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "OVERVIEW"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    }
     Text { width: parent.width; text: host.currentUser.name || host.currentUser.email || "Terminal user"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.heading }
     Text { width: parent.width; text: (host.currentUser.email || "") + "\n" + Model.environmentLabel(host.activeAccount ? host.activeAccount.environment : ""); color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap }
 
-    Rectangle {
+    Flow {
       width: parent.width
-      implicitHeight: overviewSummary.implicitHeight + Style.space(18)
-      color: root.surfaceColor()
-      radius: Style.cornerRadius
-      border.width: 1
-      border.color: root.borderColor()
-      Text {
-        id: overviewSummary
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.margins: Style.space(10)
-        anchors.verticalCenter: parent.verticalCenter
-        text: "Cart: " + Model.cartItemCount(host.cart) + " item(s)\nAddresses: " + host.addresses.length + " · Cards: " + host.cards.length + "\nOrders: " + host.orders.length + " · Subscriptions: " + host.subscriptions.length
-        color: root.foreground
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.bodySmall
-        lineHeight: 1.25
+      spacing: Style.space(8)
+      Repeater {
+        model: [
+          { label: "CART", value: Model.cartItemCount(host.cart) + " items" },
+          { label: "ORDERS", value: host.orders.length + " total" },
+          { label: "ADDRESSES", value: host.addresses.length + " saved" },
+          { label: "PLANS", value: host.subscriptions.length + " active" }
+        ]
+
+        Rectangle {
+          required property var modelData
+          width: (parent.width - parent.spacing) / 2
+          height: Style.space(64)
+          color: root.surfaceColor()
+          radius: Style.cornerRadius
+          border.width: 1
+          border.color: root.borderColor()
+
+          Column {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: Style.space(10)
+            spacing: Style.space(3)
+            Text { text: modelData.label; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
+            Text { text: modelData.value; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+          }
+        }
       }
     }
 
@@ -108,7 +123,11 @@ Column {
     width: parent.width
     spacing: Style.space(10)
 
-    Text { text: "SHOP"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    Row {
+      spacing: Style.space(8)
+      Rectangle { width: Style.space(3); height: Style.space(18); radius: Style.space(2); color: root.accent; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "SHOP"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    }
     Text { width: parent.width; text: "Choose a variant to add it to your cart, or send it to the subscription builder."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap }
     Text { visible: host.products.length === 0; text: "No products returned."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 
@@ -173,7 +192,11 @@ Column {
     width: parent.width
     spacing: Style.space(10)
 
-    Text { text: "CART & CHECKOUT"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    Row {
+      spacing: Style.space(8)
+      Rectangle { width: Style.space(3); height: Style.space(18); radius: Style.space(2); color: root.accent; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "CART & CHECKOUT"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    }
     Text { visible: !host.cart || Model.cartItemCount(host.cart) === 0; text: "Your cart is empty. Add a product from Shop."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 
     Repeater {
@@ -234,7 +257,11 @@ MouseArea { anchors.fill: parent; onClicked: host.runMutation("Clear cart", "Rem
     width: parent.width
     spacing: Style.space(10)
 
-    Text { text: "ORDERS"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    Row {
+      spacing: Style.space(8)
+      Rectangle { width: Style.space(3); height: Style.space(18); radius: Style.space(2); color: root.accent; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "ORDERS"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    }
     Text { visible: host.orders.length === 0; text: "No orders returned."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
     Repeater {
       model: host.orders
@@ -268,10 +295,10 @@ MouseArea { anchors.fill: parent; onClicked: host.runMutation("Clear cart", "Rem
 MouseArea { anchors.fill: parent; onClicked: host.cancelOrder() } }
       }
       Text { visible: root.selectedOrder !== null && root.selectedOrder !== undefined && root.selectedOrder.canUpdateShipping === true; text: "Update shipping"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
-      Row { visible: root.selectedOrder !== null && root.selectedOrder !== undefined && root.selectedOrder.canUpdateShipping === true; width: parent.width; spacing: Style.space(6); TextInput { width: (parent.width - parent.spacing) / 2; text: host.orderShippingName; onTextChanged: host.orderShippingName = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-TextInput { width: (parent.width - parent.spacing) / 2; text: host.orderShippingStreet1; onTextChanged: host.orderShippingStreet1 = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
-      Row { visible: root.selectedOrder !== null && root.selectedOrder !== undefined && root.selectedOrder.canUpdateShipping === true; width: parent.width; spacing: Style.space(6); TextInput { width: (parent.width - parent.spacing) / 2; text: host.orderShippingCity; onTextChanged: host.orderShippingCity = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-TextInput { width: (parent.width - parent.spacing) / 2; text: host.orderShippingZip; onTextChanged: host.orderShippingZip = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
+      Row { visible: root.selectedOrder !== null && root.selectedOrder !== undefined && root.selectedOrder.canUpdateShipping === true; width: parent.width; spacing: Style.space(6); TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Name"; text: host.orderShippingName; onTextChanged: host.orderShippingName = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Street address"; text: host.orderShippingStreet1; onTextChanged: host.orderShippingStreet1 = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
+      Row { visible: root.selectedOrder !== null && root.selectedOrder !== undefined && root.selectedOrder.canUpdateShipping === true; width: parent.width; spacing: Style.space(6); TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "City"; text: host.orderShippingCity; onTextChanged: host.orderShippingCity = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "ZIP"; text: host.orderShippingZip; onTextChanged: host.orderShippingZip = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
       Rectangle { visible: root.selectedOrder !== null && root.selectedOrder !== undefined && root.selectedOrder.canUpdateShipping === true; width: Style.space(150); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.buttonColor(); border.width: 1; border.color: root.borderColor(); Text { anchors.centerIn: parent; text: "Save shipping"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 MouseArea { anchors.fill: parent; onClicked: host.updateOrderShipping() } }
     }
@@ -283,7 +310,11 @@ MouseArea { anchors.fill: parent; onClicked: host.updateOrderShipping() } }
     width: parent.width
     spacing: Style.space(10)
 
-    Text { text: "SUBSCRIPTIONS"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    Row {
+      spacing: Style.space(8)
+      Rectangle { width: Style.space(3); height: Style.space(18); radius: Style.space(2); color: root.accent; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "SUBSCRIPTIONS"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    }
     Text { visible: host.subscriptions.length === 0; text: "No subscriptions returned."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
     Repeater {
       model: host.subscriptions
@@ -305,8 +336,8 @@ MouseArea { anchors.fill: parent; onClicked: host.updateOrderShipping() } }
 
     Text { text: "Create or update subscription"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.bold: true }
     ComboBox { width: parent.width; model: host.variantLabels; enabled: host.variantOptions.length > 0; currentIndex: host.subscriptionVariantIndex; onActivated: host.subscriptionVariantIndex = currentIndex }
-    Row { width: parent.width; spacing: Style.space(6); TextInput { width: (parent.width - parent.spacing) / 2; text: host.subscriptionQuantity; onTextChanged: host.subscriptionQuantity = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-TextInput { width: (parent.width - parent.spacing) / 2; text: host.subscriptionInterval; onTextChanged: host.subscriptionInterval = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
+    Row { width: parent.width; spacing: Style.space(6); TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Quantity"; text: host.subscriptionQuantity; onTextChanged: host.subscriptionQuantity = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Interval"; text: host.subscriptionInterval; onTextChanged: host.subscriptionInterval = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
     Row { width: parent.width; spacing: Style.space(6); ComboBox { width: (parent.width - parent.spacing) / 2; model: ["weekly", "fixed"]; currentIndex: host.subscriptionScheduleType === "fixed" ? 1 : 0; onActivated: host.subscriptionScheduleType = currentText }
 ComboBox { width: (parent.width - parent.spacing) / 2; model: host.addressLabels; enabled: host.addresses.length > 0; currentIndex: host.subscriptionAddressIndex; onActivated: host.subscriptionAddressIndex = currentIndex } }
     ComboBox { width: parent.width; model: host.cardLabels; enabled: host.cards.length > 0; currentIndex: host.subscriptionCardIndex; onActivated: host.subscriptionCardIndex = currentIndex }
@@ -322,15 +353,19 @@ MouseArea { anchors.fill: parent; onClicked: host.cancelSubscription() } } }
     width: parent.width
     spacing: Style.space(10)
 
-    Text { text: "ACCOUNT"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    Row {
+      spacing: Style.space(8)
+      Rectangle { width: Style.space(3); height: Style.space(18); radius: Style.space(2); color: root.accent; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "ACCOUNT"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    }
     Text { text: "Profile"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.bold: true }
-    Row { width: parent.width; spacing: Style.space(6); TextInput { width: (parent.width - parent.spacing) / 2; text: host.profileName; onTextChanged: host.profileName = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-TextInput { width: (parent.width - parent.spacing) / 2; text: host.profileEmail; onTextChanged: host.profileEmail = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
+    Row { width: parent.width; spacing: Style.space(6); TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Name"; text: host.profileName; onTextChanged: host.profileName = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Email"; text: host.profileEmail; onTextChanged: host.profileEmail = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
     Rectangle { width: Style.space(120); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.buttonColor(); border.width: 1; border.color: root.borderColor(); Text { anchors.centerIn: parent; text: "Save profile"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 MouseArea { anchors.fill: parent; onClicked: host.updateProfile() } }
 
     Text { text: "Email access and updates"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.bold: true }
-    Row { width: parent.width; spacing: Style.space(6); TextInput { width: parent.width - Style.space(120); text: host.emailInput; onTextChanged: host.emailInput = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+    Row { width: parent.width; spacing: Style.space(6); TextField { width: parent.width - Style.space(120); placeholderText: "Email address"; text: host.emailInput; onTextChanged: host.emailInput = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 Rectangle { width: Style.space(110); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.buttonColor(); Text { anchors.centerIn: parent; text: "Link email"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 MouseArea { anchors.fill: parent; onClicked: host.linkEmail() } } }
     Rectangle { width: Style.space(148); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.buttonColor(); Text { anchors.centerIn: parent; text: "Subscribe updates"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
@@ -340,12 +375,12 @@ MouseArea { anchors.fill: parent; onClicked: host.subscribeEmail() } }
     Row { width: parent.width; spacing: Style.space(8); ComboBox { width: parent.width - Style.space(110); model: host.addressLabels; enabled: host.addresses.length > 0; currentIndex: host.addressIndex(host.selectedAddressId); onActivated: host.selectAddressForEdit(currentIndex) }
 Rectangle { width: Style.space(100); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.buttonColor(); Text { anchors.centerIn: parent; text: "New address"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 MouseArea { anchors.fill: parent; onClicked: host.fillAddressFields({}) } } }
-    Row { width: parent.width; spacing: Style.space(6); TextInput { width: (parent.width - parent.spacing) / 2; text: host.addressName; onTextChanged: host.addressName = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-TextInput { width: (parent.width - parent.spacing) / 2; text: host.addressStreet1; onTextChanged: host.addressStreet1 = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
-    Row { width: parent.width; spacing: Style.space(6); TextInput { width: (parent.width - parent.spacing) / 2; text: host.addressCity; onTextChanged: host.addressCity = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-TextInput { width: (parent.width - parent.spacing) / 2; text: host.addressZip; onTextChanged: host.addressZip = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
-    Row { width: parent.width; spacing: Style.space(6); TextInput { width: (parent.width - parent.spacing) / 2; text: host.addressCountry; onTextChanged: host.addressCountry = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-TextInput { width: (parent.width - parent.spacing) / 2; text: host.addressPhone; onTextChanged: host.addressPhone = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
+    Row { width: parent.width; spacing: Style.space(6); TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Name"; text: host.addressName; onTextChanged: host.addressName = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Street address"; text: host.addressStreet1; onTextChanged: host.addressStreet1 = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
+    Row { width: parent.width; spacing: Style.space(6); TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "City"; text: host.addressCity; onTextChanged: host.addressCity = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "ZIP"; text: host.addressZip; onTextChanged: host.addressZip = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
+    Row { width: parent.width; spacing: Style.space(6); TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Country"; text: host.addressCountry; onTextChanged: host.addressCountry = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Phone"; text: host.addressPhone; onTextChanged: host.addressPhone = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
     Row { width: parent.width; spacing: Style.space(8); Rectangle { width: Style.space(120); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.accent; Text { anchors.centerIn: parent; text: host.selectedAddressId ? "Save address" : "Create address"; color: Color.background; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
 MouseArea { anchors.fill: parent; onClicked: host.saveAddress() } }
 Rectangle { visible: host.selectedAddressId !== ""; width: Style.space(112); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: "transparent"; border.width: 1; border.color: root.urgent; Text { anchors.centerIn: parent; text: "Delete address"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
@@ -371,7 +406,11 @@ MouseArea { anchors.fill: parent; onClicked: host.removeLocalAccount() } }
     width: parent.width
     spacing: Style.space(10)
 
-    Text { text: "SECURITY"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    Row {
+      spacing: Style.space(8)
+      Rectangle { width: Style.space(3); height: Style.space(18); radius: Style.space(2); color: root.accent; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "SECURITY"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    }
     Text { width: parent.width; text: "Tokens are never placed in the bar configuration. New token responses may contain a secret, so copy them immediately and clear the result when done."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap }
     Rectangle { width: Style.space(138); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.accent; Text { anchors.centerIn: parent; text: "Create PAT"; color: Color.background; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
 MouseArea { anchors.fill: parent; onClicked: host.createToken() } }
@@ -388,10 +427,14 @@ MouseArea { anchors.fill: parent; onClicked: host.deleteToken(modelData.id) } } 
     width: parent.width
     spacing: Style.space(10)
 
-    Text { text: "DEVELOPER"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    Row {
+      spacing: Style.space(8)
+      Rectangle { width: Style.space(3); height: Style.space(18); radius: Style.space(2); color: root.accent; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "DEVELOPER"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    }
     Text { width: parent.width; text: "Manage OAuth applications and inspect the fixed discovery metadata used by clients."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap }
-    Row { width: parent.width; spacing: Style.space(6); TextInput { width: (parent.width - parent.spacing) / 2; text: host.appName; onTextChanged: host.appName = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-TextInput { width: (parent.width - parent.spacing) / 2; text: host.appRedirectUri; onTextChanged: host.appRedirectUri = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
+    Row { width: parent.width; spacing: Style.space(6); TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "App name"; text: host.appName; onTextChanged: host.appName = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+TextField { width: (parent.width - parent.spacing) / 2; placeholderText: "Redirect URI"; text: host.appRedirectUri; onTextChanged: host.appRedirectUri = text; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption } }
     Row { width: parent.width; spacing: Style.space(8); Rectangle { width: Style.space(118); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.accent; Text { anchors.centerIn: parent; text: "Create app"; color: Color.background; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
 MouseArea { anchors.fill: parent; onClicked: host.createApp() } }
 Rectangle { width: Style.space(130); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.buttonColor(); Text { anchors.centerIn: parent; text: "OAuth metadata"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
@@ -409,7 +452,11 @@ MouseArea { anchors.fill: parent; onClicked: host.deleteApp(modelData.id) } } } 
     width: parent.width
     spacing: Style.space(10)
 
-    Text { text: "API EXPLORER"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    Row {
+      spacing: Style.space(8)
+      Rectangle { width: Style.space(3); height: Style.space(18); radius: Style.space(2); color: root.accent; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "API EXPLORER"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+    }
     Text { width: parent.width; text: "Every allowlisted Terminal API route is available here. Parameters use key=value, one per line; request bodies are JSON objects."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap }
     ComboBox { width: parent.width; model: host.apiOperationNames; currentIndex: host.apiIndex(host.apiOperation); onActivated: host.apiOperation = host.apiOperations[currentIndex].name }
     Text { text: "Parameters"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }

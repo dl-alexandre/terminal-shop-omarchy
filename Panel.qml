@@ -110,7 +110,6 @@ Panel {
   readonly property var subscriptions: Model.array(snapshot && snapshot.subscriptions)
   readonly property var addresses: Model.array(snapshot && snapshot.addresses)
   readonly property var cards: Model.array(snapshot && snapshot.cards)
-  readonly property var accountLabels: accountLabelList()
   readonly property var addressLabels: addressLabelList()
   readonly property var cardLabels: cardLabelList()
   readonly property var variantOptions: Model.variantOptions(products)
@@ -170,12 +169,6 @@ Panel {
     return accounts.length > 0 ? accounts[0] : null
   }
 
-  function accountLabelList() {
-    var result = []
-    for (var i = 0; i < accounts.length; i++) result.push(Model.accountLabel(accounts[i]))
-    return result
-  }
-
   function addressLabelList() {
     var result = []
     for (var i = 0; i < addresses.length; i++) {
@@ -227,20 +220,10 @@ Panel {
       bar.shell.updateEntryInline(root.moduleName, next)
   }
 
-  function selectAccount(index) {
-    if (index < 0 || index >= accounts.length) return
-    var nextId = String(accounts[index].id || "")
-    if (!nextId || nextId === activeAccountId) return
-    activeAccountId = nextId
-    replaceSettings(nextId)
-    snapshot = ({})
-    statusText = "Loading " + Model.accountLabel(accounts[index]) + "…"
-    refreshSnapshot()
-  }
-
   function selectTab(index) {
     tabIndex = Math.max(0, Math.min(8, Number(index)))
     cursorActive = true
+    if (panelFlick) panelFlick.contentY = 0
     if (tabIndex === 6 && hasAccount && tokens.length === 0 && apps.length === 0)
       refreshSecurity()
   }
@@ -1022,55 +1005,18 @@ Panel {
             }
           }
 
-          Rectangle {
-            visible: root.accounts.length > 0
-            width: parent.width
-            height: accountRow.implicitHeight + Style.space(16)
-            color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.05)
-            radius: Style.cornerRadius
-            border.width: 1
-            border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12)
-
-            Row {
-              id: accountRow
-              anchors.fill: parent
-              anchors.margins: Style.space(8)
-              spacing: Style.space(8)
-
-              Text {
-                text: "ACCOUNT"
-                color: root.dim
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                anchors.verticalCenter: parent.verticalCenter
-              }
-
-              ComboBox {
-                id: accountCombo
-                width: Math.max(160, parent.width - 90)
-                model: root.accountLabels
-                currentIndex: {
-                  for (var i = 0; i < root.accounts.length; i++)
-                    if (String(root.accounts[i].id || "") === root.activeAccountId) return i
-                  return 0
-                }
-                onActivated: root.selectAccount(currentIndex)
-              }
-            }
-          }
-
           Flow {
             id: tabs
             width: parent.width
             spacing: Style.space(4)
 
             Repeater {
-              model: ["Overview", "Shop", "Cart", "Orders", "Subscriptions", "Account", "Security", "Developer", "API"]
+              model: ["Home", "Shop", "Cart", "Orders", "Plans", "Account", "Security", "Developer", "API"]
 
               Rectangle {
                 required property string modelData
                 required property int index
-                width: (tabs.width - tabs.spacing * 4) / 5
+                width: (tabs.width - tabs.spacing * 2) / 3
                 height: Style.spacing.controlHeight
                 radius: Style.cornerRadius
                 color: index === root.tabIndex ? root.track : "transparent"
@@ -1083,6 +1029,7 @@ Panel {
                   color: root.foreground
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.caption
+                  font.bold: index === root.tabIndex
                   elide: Text.ElideRight
                 }
 
