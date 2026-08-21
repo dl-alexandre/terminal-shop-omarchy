@@ -110,7 +110,6 @@ Panel {
   readonly property var subscriptions: Model.array(snapshot && snapshot.subscriptions)
   readonly property var addresses: Model.array(snapshot && snapshot.addresses)
   readonly property var cards: Model.array(snapshot && snapshot.cards)
-  readonly property var accountLabels: accountLabelList()
   readonly property var addressLabels: addressLabelList()
   readonly property var cardLabels: cardLabelList()
   readonly property var variantOptions: Model.variantOptions(products)
@@ -170,12 +169,6 @@ Panel {
     return accounts.length > 0 ? accounts[0] : null
   }
 
-  function accountLabelList() {
-    var result = []
-    for (var i = 0; i < accounts.length; i++) result.push(Model.accountLabel(accounts[i]))
-    return result
-  }
-
   function addressLabelList() {
     var result = []
     for (var i = 0; i < addresses.length; i++) {
@@ -225,17 +218,6 @@ Panel {
     root.settings = next
     if (bar && bar.shell && typeof bar.shell.updateEntryInline === "function")
       bar.shell.updateEntryInline(root.moduleName, next)
-  }
-
-  function selectAccount(index) {
-    if (index < 0 || index >= accounts.length) return
-    var nextId = String(accounts[index].id || "")
-    if (!nextId || nextId === activeAccountId) return
-    activeAccountId = nextId
-    replaceSettings(nextId)
-    snapshot = ({})
-    statusText = "Loading " + Model.accountLabel(accounts[index]) + "…"
-    refreshSnapshot()
   }
 
   function selectTab(index) {
@@ -1019,66 +1001,6 @@ Panel {
               MouseArea {
                 anchors.fill: parent
                 onClicked: root.refreshAll()
-              }
-            }
-          }
-
-          Rectangle {
-            visible: root.accounts.length > 0
-            width: parent.width
-            height: accountRow.implicitHeight + Style.space(16)
-            color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.05)
-            radius: Style.cornerRadius
-            border.width: 1
-            border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12)
-
-            Row {
-              id: accountRow
-              anchors.fill: parent
-              anchors.margins: Style.space(8)
-              spacing: Style.space(8)
-
-              Text {
-                id: accountCaption
-                text: "ACCOUNT"
-                color: root.dim
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                anchors.verticalCenter: parent.verticalCenter
-              }
-
-              Rectangle {
-                id: environmentBadge
-                width: Style.space(72)
-                height: Style.space(24)
-                radius: Style.cornerRadius
-                color: root.activeAccount && root.activeAccount.environment === "production"
-                  ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.16)
-                  : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.14)
-                border.width: 1
-                border.color: root.activeAccount && root.activeAccount.environment === "production" ? root.urgent : root.accent
-                anchors.verticalCenter: parent.verticalCenter
-
-                Text {
-                  anchors.centerIn: parent
-                  text: root.activeAccount && root.activeAccount.environment === "production" ? "PROD" : "DEV"
-                  color: root.foreground
-                  font.family: root.fontFamily
-                  font.pixelSize: Style.font.caption
-                  font.bold: true
-                }
-              }
-
-              ComboBox {
-                id: accountCombo
-                width: Math.max(120, parent.width - accountCaption.implicitWidth - environmentBadge.width - parent.spacing * 2)
-                model: root.accountLabels
-                currentIndex: {
-                  for (var i = 0; i < root.accounts.length; i++)
-                    if (String(root.accounts[i].id || "") === root.activeAccountId) return i
-                  return 0
-                }
-                onActivated: root.selectAccount(currentIndex)
               }
             }
           }
