@@ -1,4 +1,5 @@
 import json
+from io import BytesIO
 from pathlib import Path
 import sys
 import unittest
@@ -11,6 +12,7 @@ from terminal_shop import (  # noqa: E402
     OPERATIONS,
     normalize_api_error,
     normalize_environment,
+    read_response_body,
     render_path,
 )
 
@@ -57,6 +59,17 @@ class TerminalShopContractTests(unittest.TestCase):
         error = normalize_api_error(401, {"message": "nope", "token": "should-not-be-copied"})
         self.assertEqual(error["code"], "http_401")
         self.assertNotIn("token", json.dumps(error))
+
+    def test_response_body_is_bounded(self):
+        raw, error = read_response_body(BytesIO(b"{}"))
+        self.assertEqual(raw, b"{}")
+        self.assertIsNone(error)
+
+        from terminal_shop import MAX_RESPONSE_BYTES
+
+        raw, error = read_response_body(BytesIO(b"x" * (MAX_RESPONSE_BYTES + 1)))
+        self.assertEqual(raw, b"")
+        self.assertIn("exceeded", error or "")
 
 
 if __name__ == "__main__":
