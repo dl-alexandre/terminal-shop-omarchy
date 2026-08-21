@@ -620,7 +620,8 @@ Panel {
   function openResultUrl() {
     var value = lastResult
     var url = typeof value === "string" ? value : (value && (value.url || value.href || value.link))
-    if (url) Qt.openUrlExternally(String(url))
+    var normalizedUrl = String(url || "").trim()
+    if (/^https?:\\/\\//i.test(normalizedUrl)) Qt.openUrlExternally(normalizedUrl)
   }
 
   function addAccount() {
@@ -963,6 +964,7 @@ Panel {
               spacing: Style.space(3)
 
               Text {
+                textFormat: Text.PlainText;
                 width: parent.width
                 text: "TERMINAL SHOP"
                 color: root.foreground
@@ -972,6 +974,7 @@ Panel {
               }
 
               Text {
+                textFormat: Text.PlainText;
                 width: parent.width
                 text: root.hasAccount ? Model.accountLabel(root.activeAccount) : "No account connected"
                 color: root.dim
@@ -991,6 +994,7 @@ Panel {
               border.color: root.accent
 
               Text {
+                textFormat: Text.PlainText;
                 anchors.centerIn: parent
                 text: root.loading ? "Loading" : "Refresh"
                 color: root.foreground
@@ -1024,6 +1028,7 @@ Panel {
                 border.color: index === root.tabIndex ? root.accent : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12)
 
                 Text {
+                textFormat: Text.PlainText;
                   anchors.centerIn: parent
                   text: modelData
                   color: root.foreground
@@ -1051,6 +1056,7 @@ Panel {
             border.color: Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.38)
 
             Text {
+                textFormat: Text.PlainText;
               id: errorLabel
               anchors.left: parent.left
               anchors.right: parent.right
@@ -1065,6 +1071,7 @@ Panel {
           }
 
           Text {
+                textFormat: Text.PlainText;
             visible: root.statusText !== ""
             width: parent.width
             text: root.statusText
@@ -1091,8 +1098,10 @@ Panel {
               anchors.margins: Style.space(10)
               spacing: Style.space(8)
 
-              Text { width: parent.width; text: root.confirmTitle; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.bold: true }
-              Text { width: parent.width; text: root.confirmMessage; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap }
+              Text {
+                textFormat: Text.PlainText; width: parent.width; text: root.confirmTitle; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.bold: true }
+              Text {
+                textFormat: Text.PlainText; width: parent.width; text: root.confirmMessage; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap }
 
               Row {
                 spacing: Style.space(8)
@@ -1101,7 +1110,8 @@ Panel {
                   height: Style.spacing.controlHeight
                   radius: Style.cornerRadius
                   color: root.accent
-                  Text { anchors.centerIn: parent; text: "Confirm"; color: Color.background; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
+                  Text {
+                textFormat: Text.PlainText; anchors.centerIn: parent; text: "Confirm"; color: Color.background; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
                   MouseArea { anchors.fill: parent; onClicked: root.approveConfirmation() }
                 }
                 Rectangle {
@@ -1111,7 +1121,8 @@ Panel {
                   color: "transparent"
                   border.width: 1
                   border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.20)
-                  Text { anchors.centerIn: parent; text: "Cancel"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+                  Text {
+                textFormat: Text.PlainText; anchors.centerIn: parent; text: "Cancel"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
                   MouseArea { anchors.fill: parent; onClicked: root.cancelConfirmation() }
                 }
               }
@@ -1125,6 +1136,7 @@ Panel {
             spacing: Style.space(10)
 
             Text {
+                textFormat: Text.PlainText;
               width: parent.width
               text: "CONNECT AN ACCOUNT"
               color: root.foreground
@@ -1134,6 +1146,7 @@ Panel {
             }
 
             Text {
+                textFormat: Text.PlainText;
               width: parent.width
               text: "Create a personal access token with the command below, then paste it here. The token is verified and stored in Secret Service."
               color: root.dim
@@ -1151,6 +1164,7 @@ Panel {
               border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.14)
 
               Text {
+                textFormat: Text.PlainText;
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
@@ -1176,7 +1190,8 @@ Panel {
                 color: root.setupEnvironment === "dev" ? root.track : "transparent"
                 border.width: 1
                 border.color: root.setupEnvironment === "dev" ? root.accent : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.16)
-                Text { anchors.centerIn: parent; text: "DEV SANDBOX"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+                Text {
+                textFormat: Text.PlainText; anchors.centerIn: parent; text: "DEV SANDBOX"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
                 MouseArea { anchors.fill: parent; onClicked: { root.setupEnvironment = "dev"; root.refreshProducts() } }
               }
 
@@ -1187,7 +1202,8 @@ Panel {
                 color: root.setupEnvironment === "production" ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.16) : "transparent"
                 border.width: 1
                 border.color: root.setupEnvironment === "production" ? root.urgent : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.16)
-                Text { anchors.centerIn: parent; text: "PRODUCTION"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+                Text {
+                textFormat: Text.PlainText; anchors.centerIn: parent; text: "PRODUCTION"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
                 MouseArea { anchors.fill: parent; onClicked: { root.setupEnvironment = "production"; root.refreshProducts() } }
               }
             }
@@ -1210,7 +1226,8 @@ Panel {
                 font.pixelSize: Style.font.bodySmall
                 onTextChanged: root.setupLabel = text
               }
-              Text { visible: !labelInput.text; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: Style.space(10); text: "Account label (optional)"; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+              Text {
+                textFormat: Text.PlainText; visible: !labelInput.text; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: Style.space(10); text: "Account label (optional)"; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
             }
 
             Rectangle {
@@ -1235,8 +1252,10 @@ Panel {
                 font.pixelSize: Style.font.bodySmall
                 onTextChanged: root.setupToken = text
               }
-              Text { visible: !tokenInput.text; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: Style.space(10); text: "Personal access token"; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
               Text {
+                textFormat: Text.PlainText; visible: !tokenInput.text; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: Style.space(10); text: "Personal access token"; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+              Text {
+                textFormat: Text.PlainText;
                 id: showToken
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
@@ -1254,7 +1273,8 @@ Panel {
               height: Style.spacing.controlHeight
               color: root.accent
               radius: Style.cornerRadius
-              Text { anchors.centerIn: parent; text: "Connect account"; color: Color.background; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.bold: true }
+              Text {
+                textFormat: Text.PlainText; anchors.centerIn: parent; text: "Connect account"; color: Color.background; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.bold: true }
               MouseArea { anchors.fill: parent; onClicked: root.addAccount() }
             }
           }
@@ -1272,8 +1292,10 @@ Panel {
               width: parent.width
               spacing: Style.space(10)
 
-              Text { text: "OVERVIEW"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
               Text {
+                textFormat: Text.PlainText; text: "OVERVIEW"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+              Text {
+                textFormat: Text.PlainText;
                 width: parent.width
                 text: root.currentUser.name || root.currentUser.email || "Terminal user"
                 color: root.foreground
@@ -1281,6 +1303,7 @@ Panel {
                 font.pixelSize: Style.font.heading
               }
               Text {
+                textFormat: Text.PlainText;
                 width: parent.width
                 text: (root.currentUser.email || "") + "\n" + Model.environmentLabel(root.activeAccount ? root.activeAccount.environment : "")
                 color: root.dim
@@ -1297,6 +1320,7 @@ Panel {
                 border.width: 1
                 border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12)
                 Text {
+                textFormat: Text.PlainText;
                   id: summaryText
                   anchors.left: parent.left
                   anchors.right: parent.right
@@ -1311,7 +1335,8 @@ Panel {
                 }
               }
 
-              Text { visible: root.orders.length === 0; text: "No orders returned yet."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+              Text {
+                textFormat: Text.PlainText; visible: root.orders.length === 0; text: "No orders returned yet."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
               Repeater {
                 model: root.orders.slice(0, 3)
                 Rectangle {
@@ -1322,8 +1347,10 @@ Panel {
                   border.width: 1
                   border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.10)
                   radius: Style.cornerRadius
-                  Text { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: Style.space(10); text: Model.orderTitle(modelData); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
-                  Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.rightMargin: Style.space(10); text: Model.shortDate(modelData.created); color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+                  Text {
+                textFormat: Text.PlainText; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: Style.space(10); text: Model.orderTitle(modelData); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+                  Text {
+                textFormat: Text.PlainText; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.rightMargin: Style.space(10); text: Model.shortDate(modelData.created); color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
                 }
               }
             }
@@ -1332,8 +1359,10 @@ Panel {
               visible: root.tabIndex === 1
               width: parent.width
               spacing: Style.space(10)
-              Text { text: "SHOP"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
-              Text { visible: root.products.length === 0; text: "No products returned."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+              Text {
+                textFormat: Text.PlainText; text: "SHOP"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+              Text {
+                textFormat: Text.PlainText; visible: root.products.length === 0; text: "No products returned."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
               Repeater {
                 model: root.products
                 Rectangle {
@@ -1351,8 +1380,10 @@ Panel {
                     anchors.top: parent.top
                     anchors.margins: Style.space(10)
                     spacing: Style.space(4)
-                    Text { width: parent.width; text: modelData.name || "Product"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.bold: true; elide: Text.ElideRight }
-                    Text { width: parent.width; text: (modelData.description || "") + (Model.productPrice(modelData) ? " · from " + Model.productPrice(modelData) : ""); color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; maximumLineCount: 3; elide: Text.ElideRight }
+                    Text {
+                textFormat: Text.PlainText; width: parent.width; text: modelData.name || "Product"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.bold: true; elide: Text.ElideRight }
+                    Text {
+                textFormat: Text.PlainText; width: parent.width; text: (modelData.description || "") + (Model.productPrice(modelData) ? " · from " + Model.productPrice(modelData) : ""); color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; maximumLineCount: 3; elide: Text.ElideRight }
                   }
                 }
               }
@@ -1362,8 +1393,10 @@ Panel {
               visible: root.tabIndex === 2
               width: parent.width
               spacing: Style.space(10)
-              Text { text: "ORDERS"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
-              Text { visible: root.orders.length === 0; text: "No orders returned."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+              Text {
+                textFormat: Text.PlainText; text: "ORDERS"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+              Text {
+                textFormat: Text.PlainText; visible: root.orders.length === 0; text: "No orders returned."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
               Repeater {
                 model: root.orders
                 Rectangle {
@@ -1374,9 +1407,12 @@ Panel {
                   border.width: 1
                   border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12)
                   radius: Style.cornerRadius
-                  Text { anchors.left: parent.left; anchors.top: parent.top; anchors.leftMargin: Style.space(10); anchors.topMargin: Style.space(8); text: Model.orderTitle(modelData); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
-                  Text { anchors.left: parent.left; anchors.bottom: parent.bottom; anchors.leftMargin: Style.space(10); anchors.bottomMargin: Style.space(8); text: "Created " + Model.shortDate(modelData.created); color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-                  Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.rightMargin: Style.space(10); text: Model.money(modelData.amount && modelData.amount.subtotal); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+                  Text {
+                textFormat: Text.PlainText; anchors.left: parent.left; anchors.top: parent.top; anchors.leftMargin: Style.space(10); anchors.topMargin: Style.space(8); text: Model.orderTitle(modelData); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+                  Text {
+                textFormat: Text.PlainText; anchors.left: parent.left; anchors.bottom: parent.bottom; anchors.leftMargin: Style.space(10); anchors.bottomMargin: Style.space(8); text: "Created " + Model.shortDate(modelData.created); color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+                  Text {
+                textFormat: Text.PlainText; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.rightMargin: Style.space(10); text: Model.money(modelData.amount && modelData.amount.subtotal); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
                 }
               }
             }
@@ -1385,8 +1421,10 @@ Panel {
               visible: root.tabIndex === 3
               width: parent.width
               spacing: Style.space(10)
-              Text { text: "SUBSCRIPTIONS"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
-              Text { visible: root.subscriptions.length === 0; text: "No subscriptions returned."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+              Text {
+                textFormat: Text.PlainText; text: "SUBSCRIPTIONS"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+              Text {
+                textFormat: Text.PlainText; visible: root.subscriptions.length === 0; text: "No subscriptions returned."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
               Repeater {
                 model: root.subscriptions
                 Rectangle {
@@ -1397,8 +1435,10 @@ Panel {
                   border.width: 1
                   border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12)
                   radius: Style.cornerRadius
-                  Text { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: Style.space(10); text: Model.subscriptionTitle(modelData); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
-                  Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.rightMargin: Style.space(10); text: Model.money(modelData.price); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+                  Text {
+                textFormat: Text.PlainText; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: Style.space(10); text: Model.subscriptionTitle(modelData); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+                  Text {
+                textFormat: Text.PlainText; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.rightMargin: Style.space(10); text: Model.money(modelData.price); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
                 }
               }
             }
@@ -1407,8 +1447,10 @@ Panel {
               visible: root.tabIndex === 4
               width: parent.width
               spacing: Style.space(10)
-              Text { text: "SECURITY"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
-              Text { width: parent.width; text: "Remote personal access tokens and OAuth apps are read through the same fixed API registry. Creation and deletion will use explicit confirmation in the next commerce/security slice."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap }
+              Text {
+                textFormat: Text.PlainText; text: "SECURITY"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+              Text {
+                textFormat: Text.PlainText; width: parent.width; text: "Remote personal access tokens and OAuth apps are read through the same fixed API registry. Creation and deletion will use explicit confirmation in the next commerce/security slice."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap }
               Rectangle {
                 width: parent.width
                 implicitHeight: securityText.implicitHeight + Style.space(18)
@@ -1416,7 +1458,8 @@ Panel {
                 radius: Style.cornerRadius
                 border.width: 1
                 border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12)
-                Text { id: securityText; anchors.left: parent.left; anchors.right: parent.right; anchors.margins: Style.space(10); anchors.verticalCenter: parent.verticalCenter; text: "Personal tokens: " + root.tokens.length + "\nOAuth apps: " + root.apps.length; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+                Text {
+                textFormat: Text.PlainText; id: securityText; anchors.left: parent.left; anchors.right: parent.right; anchors.margins: Style.space(10); anchors.verticalCenter: parent.verticalCenter; text: "Personal tokens: " + root.tokens.length + "\nOAuth apps: " + root.apps.length; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
               }
             }
           }
