@@ -30,6 +30,7 @@ import uuid
 VERSION = "0.1.0"
 MAX_RETRIES = 2
 REQUEST_TIMEOUT_SECONDS = 20
+MAX_RESPONSE_BYTES = 1_048_576
 RETRY_STATUS_CODES = {408, 429} | set(range(500, 600))
 
 ENVIRONMENTS = {
@@ -275,7 +276,9 @@ class ApiClient:
             request = Request(self.base_url + path, data=encoded_body, headers=headers, method=method)
             try:
                 with urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
-                    raw = response.read()
+                    raw, read_error = read_response_body(response)
+                    if read_error:
+                        return int(response.status), None, dict(response.headers.items()), read_error
                     payload, decode_error = decode_body(raw)
                     status = int(response.status)
                     if retryable and status in RETRY_STATUS_CODES and attempt < MAX_RETRIES:
@@ -283,7 +286,9 @@ class ApiClient:
                         continue
                     return status, payload, dict(response.headers.items()), decode_error
             except HTTPError as exc:
-                raw = exc.read()
+                raw, read_error = read_response_body(exc)
+                if read_error:
+                    return int(exc.code), None, dict(exc.headers.items()) if exc.headers else {}, read_error
                 payload, decode_error = decode_body(raw)
                 status = int(exc.code)
                 if retryable and status in RETRY_STATUS_CODES and attempt < MAX_RETRIES:
@@ -298,6 +303,13 @@ class ApiClient:
                 return 0, None, {}, f"Network request failed: {reason}."
 
         return 0, None, {}, "Network request failed."
+
+
+def read_response_body(stream: Any) -> tuple[bytes, str | None]:
+    raw = stream.read(MAX_RESPONSE_BYTES + 1)
+    if len(raw) > MAX_RESPONSE_BYTES:
+        return b"", f"Terminal API response exceeded the {MAX_RESPONSE_BYTES}-byte limit."
+    return raw, None
 
 
 def decode_body(raw: bytes) -> tuple[Any, str | None]:
