@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "terminal.shop",
+  "name": "Terminal Shop",
+  "version": "0.1.0",
+  "author": "Alexandre",
+  "license": "MIT",
+  "description": "Manage terminal.shop accounts, products, and account data from an Omarchy bar panel.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "activation": "on-demand",
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Terminal Shop",
+    "description": "Switch terminal.shop accounts and inspect profile, products, cart, orders, and subscriptions.",
+    "category": "Productivity",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "activeAccountId": "",
+      "refreshIntervalSec": 900
+    },
+    "schema": [
+      {
+        "key": "activeAccountId",
+        "type": "string",
+        "label": "Active account",
+        "defaultValue": "",
+        "description": "Local account identifier. Credentials remain in Secret Service."
+      },
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 60,
+        "max": 3600,
+        "step": 60,
+        "defaultValue": 900
+      }
+    ]
+  }
+}

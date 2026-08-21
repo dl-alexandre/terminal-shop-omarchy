@@ -1,0 +1,19 @@
+{
+  "name": "terminal-shop",
+  "version": "0.1.0",
+  "description": "Manage terminal.shop accounts from an Omarchy shell panel.",
+  "author": {
+    "name": "Alexandre"
+  },
+  "license": "MIT",
+  "keywords": ["omarchy", "terminal.shop", "coffee", "accounts"],
+  "interface": {
+    "displayName": "Terminal Shop",
+    "shortDescription": "Manage terminal.shop from Omarchy.",
+    "longDescription": "A native Omarchy shell panel for Terminal Shop accounts, products, orders, subscriptions, and account security.",
+    "developerName": "Alexandre",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Account management"],
+    "defaultPrompt": ["Help me manage terminal.shop accounts."]
+  }
+}
