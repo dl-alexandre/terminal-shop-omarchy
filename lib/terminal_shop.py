@@ -22,8 +22,8 @@ import tempfile
 import time
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote
-from urllib.request import Request, urlopen
+from urllib.parse import quote, urlparse
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 import uuid
 
 
@@ -114,6 +114,58 @@ class HelperError(Exception):
         self.code = code
         self.message = message
         self.details = details
+
+
+class RedirectBlockedError(Exception):
+    """Raised when an API response redirects outside its fixed HTTPS origin."""
+
+
+SENSITIVE_KEYS = re.compile(
+    r"^(?:token|access[_-]?token|refresh[_-]?token|secret|password|authorization|"
+    r"api[_-]?key|private[_-]?key|client[_-]?secret|card[_-]?number|cvv)$",
+    re.IGNORECASE,
+)
+
+
+def redact_sensitive_data(value: Any) -> Any:
+    if isinstance(value, list):
+        return [redact_sensitive_data(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: "[REDACTED]" if SENSITIVE_KEYS.fullmatch(str(key)) else redact_sensitive_data(item)
+            for key, item in value.items()
+        }
+    return value
+
+
+class FixedOriginRedirectHandler(HTTPRedirectHandler):
+    def __init__(self, base_url: str) -> None:
+        super().__init__()
+        parsed = urlparse(base_url)
+        if parsed.scheme.lower() != "https" or not parsed.hostname:
+            raise ValueError("API origins must use HTTPS.")
+        self.origin_scheme = parsed.scheme.lower()
+        self.origin_host = parsed.hostname.lower()
+        try:
+            self.origin_port = parsed.port or 443
+        except ValueError as exc:
+            raise ValueError("API origin has an invalid port.") from exc
+
+    def redirect_request(self, req: Request, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Request:
+        parsed = urlparse(newurl)
+        try:
+            redirect_port = parsed.port or 443
+        except ValueError as exc:
+            raise RedirectBlockedError("Terminal API redirect has an invalid port.") from exc
+        if (
+            parsed.scheme.lower() != self.origin_scheme
+            or (parsed.hostname or "").lower() != self.origin_host
+            or redirect_port != self.origin_port
+            or parsed.username is not None
+            or parsed.password is not None
+        ):
+            raise RedirectBlockedError("Terminal API redirect left the configured HTTPS origin.")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
 def now_iso() -> str:
@@ -217,11 +269,16 @@ def normalize_api_error(status: int, payload: Any) -> dict[str, Any]:
     error_type = str(raw.get("type") or "http_error")
     code = str(raw.get("code") or f"http_{status}")
     message = str(raw.get("message") or f"Terminal API request failed with HTTP {status}.")
+    message = re.sub(
+        r"(?i)\b(bearer|token|secret|password|api[_-]?key)\s*[:=]\s*\S+",
+        r"\1 [REDACTED]",
+        message,
+    )[:512]
     normalized: dict[str, Any] = {"type": error_type, "code": code, "message": message}
     if raw.get("param") is not None:
         normalized["param"] = str(raw["param"])
     if raw.get("details") is not None:
-        normalized["details"] = raw["details"]
+        normalized["details"] = redact_sensitive_data(raw["details"])
     return normalized
 
 
@@ -251,6 +308,7 @@ def parse_params(values: list[str] | None) -> dict[str, str]:
 class ApiClient:
     def __init__(self, base_url: str) -> None:
         self.base_url = base_url.rstrip("/")
+        self.opener = build_opener(FixedOriginRedirectHandler(self.base_url))
 
     def request(
         self,
@@ -275,7 +333,7 @@ class ApiClient:
         for attempt in range(MAX_RETRIES + 1):
             request = Request(self.base_url + path, data=encoded_body, headers=headers, method=method)
             try:
-                with urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+                with self.opener.open(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
                     raw, read_error = read_response_body(response)
                     if read_error:
                         return int(response.status), None, dict(response.headers.items()), read_error
@@ -301,6 +359,8 @@ class ApiClient:
                     continue
                 reason = getattr(exc, "reason", exc)
                 return 0, None, {}, f"Network request failed: {reason}."
+            except RedirectBlockedError as exc:
+                return 0, None, {}, str(exc)
 
         return 0, None, {}, "Network request failed."
 
@@ -551,7 +611,10 @@ def run_call(args: argparse.Namespace, payload: dict[str, Any]) -> dict[str, Any
         return error_response(operation, response_error(status, decode_error), status=status, environment=environment, account_id=account_id)
     if status < 200 or status >= 300:
         return error_response(operation, normalize_api_error(status, response), status=status, environment=environment, account_id=account_id)
-    return ok_response(operation, unwrap_data(response), status=status, environment=environment, account_id=account_id)
+    result = unwrap_data(response)
+    if operation != "token.create":
+        result = redact_sensitive_data(result)
+    return ok_response(operation, result, status=status, environment=environment, account_id=account_id)
 
 
 def run_auth_metadata(args: argparse.Namespace) -> dict[str, Any]:
@@ -562,7 +625,7 @@ def run_auth_metadata(args: argparse.Namespace) -> dict[str, Any]:
         return error_response("auth.metadata", response_error(status, decode_error), status=status, environment=environment)
     if status < 200 or status >= 300:
         return error_response("auth.metadata", normalize_api_error(status, response), status=status, environment=environment)
-    return ok_response("auth.metadata", response, status=status, environment=environment)
+    return ok_response("auth.metadata", redact_sensitive_data(response), status=status, environment=environment)
 
 
 def build_parser() -> argparse.ArgumentParser:
