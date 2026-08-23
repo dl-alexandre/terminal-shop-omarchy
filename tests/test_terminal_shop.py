@@ -3,6 +3,7 @@ from io import BytesIO
 from pathlib import Path
 import sys
 import unittest
+from urllib.request import Request
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,6 +13,9 @@ from terminal_shop import (  # noqa: E402
     OPERATIONS,
     normalize_api_error,
     normalize_environment,
+    FixedOriginRedirectHandler,
+    RedirectBlockedError,
+    redact_sensitive_data,
     read_response_body,
     render_path,
 )
@@ -60,6 +64,14 @@ class TerminalShopContractTests(unittest.TestCase):
         self.assertEqual(error["code"], "http_401")
         self.assertNotIn("token", json.dumps(error))
 
+    def test_error_normalization_redacts_secret_like_messages_and_details(self):
+        error = normalize_api_error(
+            400,
+            {"message": "token=super-secret-value", "details": {"secret": "hidden", "field": "email"}},
+        )
+        self.assertNotIn("super-secret-value", json.dumps(error))
+        self.assertEqual(error["details"]["secret"], "[REDACTED]")
+
     def test_response_body_is_bounded(self):
         raw, error = read_response_body(BytesIO(b"{}"))
         self.assertEqual(raw, b"{}")
@@ -70,6 +82,28 @@ class TerminalShopContractTests(unittest.TestCase):
         raw, error = read_response_body(BytesIO(b"x" * (MAX_RESPONSE_BYTES + 1)))
         self.assertEqual(raw, b"")
         self.assertIn("exceeded", error or "")
+
+    def test_sensitive_response_fields_are_redacted(self):
+        value = redact_sensitive_data({"id": "tok_1", "token": "secret", "nested": [{"password": "pw"}]})
+        self.assertEqual(value["id"], "tok_1")
+        self.assertEqual(value["token"], "[REDACTED]")
+        self.assertEqual(value["nested"][0]["password"], "[REDACTED]")
+
+    def test_redirect_handler_rejects_cross_origin_and_scheme_changes(self):
+        handler = FixedOriginRedirectHandler("https://api.terminal.shop")
+        request = Request("https://api.terminal.shop/profile")
+        with self.assertRaises(RedirectBlockedError):
+            handler.redirect_request(request, None, 302, "Found", {}, "https://evil.example/profile")
+        with self.assertRaises(RedirectBlockedError):
+            handler.redirect_request(request, None, 302, "Found", {}, "http://api.terminal.shop/profile")
+
+    def test_redirect_handler_allows_same_origin_https(self):
+        handler = FixedOriginRedirectHandler("https://api.terminal.shop")
+        request = Request("https://api.terminal.shop/profile")
+        redirected = handler.redirect_request(
+            request, None, 302, "Found", {"Content-Length": "0"}, "https://api.terminal.shop/v2/profile"
+        )
+        self.assertEqual(redirected.full_url, "https://api.terminal.shop/v2/profile")
 
 
 if __name__ == "__main__":

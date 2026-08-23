@@ -456,7 +456,7 @@ MouseArea { anchors.fill: parent; onClicked: host.deleteCard(modelData.id) } } }
     Row { width: parent.width; spacing: Style.space(8); Rectangle { width: Style.space(160); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.buttonColor(); Text {
                 textFormat: Text.PlainText; anchors.centerIn: parent; text: "Add card securely"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 MouseArea { anchors.fill: parent; onClicked: host.collectCard() } }
-Rectangle { visible: host.requestOperation === "card.collect" && host.lastResult; width: Style.space(110); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.track; Text {
+Rectangle { visible: host.requestOperation === "card.collect" && host.canOpenResultUrl(); width: Style.space(110); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.track; Text {
                 textFormat: Text.PlainText; anchors.centerIn: parent; text: "Open card page"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 MouseArea { anchors.fill: parent; onClicked: host.openResultUrl() } } }
 
@@ -483,9 +483,12 @@ MouseArea { anchors.fill: parent; onClicked: host.removeLocalAccount() } }
                 textFormat: Text.PlainText; anchors.centerIn: parent; text: "Create PAT"; color: Color.background; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
 MouseArea { anchors.fill: parent; onClicked: host.createToken() } }
     Text {
-                textFormat: Text.PlainText; visible: host.apiCreateTokenOutput !== ""; width: parent.width; text: host.apiCreateTokenOutput; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.Wrap; maximumLineCount: 8 }
+                textFormat: Text.PlainText; visible: host.tokenRevealVisible; width: parent.width; text: host.apiCreateTokenOutput; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: Text.Wrap; maximumLineCount: 8 }
+    Rectangle { visible: host.tokenRevealVisible; width: Style.space(110); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: "transparent"; border.width: 1; border.color: root.urgent; Text {
+                textFormat: Text.PlainText; anchors.centerIn: parent; text: "Clear reveal"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+MouseArea { anchors.fill: parent; onClicked: host.clearTokenReveal() } }
     Repeater { model: host.tokens; Rectangle { required property var modelData; width: parent.width; height: Style.space(42); color: "transparent"; border.width: 1; border.color: root.borderColor(); radius: Style.cornerRadius; Text {
-                textFormat: Text.PlainText; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: Style.space(10); text: String(modelData.id || "Token") + " · " + String(modelData.token || "obfuscated"); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+                textFormat: Text.PlainText; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: Style.space(10); text: String(modelData.id || "Token") + " · Personal access token"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 Rectangle { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.rightMargin: Style.space(6); width: Style.space(26); height: Style.space(24); color: "transparent"; Text {
                 textFormat: Text.PlainText; anchors.centerIn: parent; text: "×"; color: root.urgent; font.pixelSize: Style.font.body }
 MouseArea { anchors.fill: parent; onClicked: host.deleteToken(modelData.id) } } } }
@@ -553,7 +556,7 @@ MouseArea { anchors.fill: parent; onClicked: host.executeApi() } }
     Text {
                 textFormat: Text.PlainText; visible: host.apiOutput !== ""; text: "Response"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
     TextArea { visible: host.apiOutput !== ""; width: parent.width; height: Style.space(180); text: host.apiOutput; readOnly: true; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption; wrapMode: TextEdit.Wrap }
-    Rectangle { visible: host.apiOutput !== "" && (host.lastResult.url || host.lastResult.href || host.lastResult.link); width: Style.space(110); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.track; Text {
+    Rectangle { visible: host.apiOutput !== "" && host.canOpenResultUrl(); width: Style.space(110); height: Style.spacing.controlHeight; radius: Style.cornerRadius; color: root.track; Text {
                 textFormat: Text.PlainText; anchors.centerIn: parent; text: "Open URL"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
 MouseArea { anchors.fill: parent; onClicked: host.openResultUrl() } }
   }

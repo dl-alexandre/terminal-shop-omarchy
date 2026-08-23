@@ -78,7 +78,9 @@ they do not accept arbitrary hostnames or paths.
 
 The plugin never writes a credential to `shell.json`. Account metadata is kept
 under `$XDG_STATE_HOME/omarchy/terminal-shop/accounts.json` with mode 0600;
-PATs are stored in Secret Service under the `terminal-shop` service name.
+PATs are stored in Secret Service under the `terminal-shop` service name. Token
+lists are redacted, and a newly created token is revealed only once in the
+panel, with an explicit clear action and automatic expiry.
 
 ## API helper
 
@@ -91,8 +93,26 @@ line. For example, after adding an account:
 
 The `call` command only accepts the fixed operation names in
 `lib/terminal_shop.py`. It never accepts a caller-provided base URL. Read
-operations retry transient failures; writes do not retry automatically.
+operations retry transient failures; writes do not retry automatically. HTTP
+responses are bounded, redirects must remain HTTPS on the configured
+Terminal API/auth origin, and result links are restricted to `*.terminal.shop`.
 
 Use the dev environment first. Production order, subscription, card, token,
 and app mutations are confirmation-gated in the panel; the helper itself never
 silently promotes a request to production.
+
+## Security boundary and limitations
+
+This plugin runs inside the unsandboxed Omarchy/Quickshell user session. It
+can therefore access the user's Secret Service, local state directory, and
+network with the same permissions as the shell. The plugin does not provide a
+process sandbox or protect a machine whose user session or Omarchy installation
+is already compromised.
+
+Within that trust boundary, the helper keeps the API operation registry and
+HTTPS environments fixed, rejects redirects away from the configured API or
+auth origin, bounds response bodies to 1 MiB, avoids shell evaluation, stores
+only account metadata on disk with mode 0600, and keeps PATs in Secret Service.
+The UI redacts sensitive response fields, restricts result links to
+`*.terminal.shop`, and requires confirmation for mutations. Users still need
+to trust the plugin source and the configured Terminal Shop endpoints.

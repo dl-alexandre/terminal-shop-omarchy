@@ -80,6 +80,7 @@ Panel {
   property string apiBodyText: "{}"
   property string apiOutput: ""
   property string apiCreateTokenOutput: ""
+  property bool tokenRevealVisible: false
   property string requestOperation: ""
   property string confirmTitle: ""
   property string confirmMessage: ""
@@ -211,6 +212,42 @@ Panel {
     return 0
   }
 
+  function isSensitiveKey(key) {
+    return /^(token|access[_-]?token|refresh[_-]?token|secret|password|authorization|api[_-]?key|private[_-]?key|client[_-]?secret|card[_-]?number|cvv)$/i.test(String(key || ""))
+  }
+
+  function redactApiValue(value, revealToken) {
+    if (Array.isArray(value)) {
+      var arrayResult = []
+      for (var i = 0; i < value.length; i++) arrayResult.push(redactApiValue(value[i], revealToken))
+      return arrayResult
+    }
+    if (!value || typeof value !== "object") return value
+    var result = ({})
+    for (var key in value) {
+      if (isSensitiveKey(key)) {
+        var revealable = revealToken && /^(token|access[_-]?token)$/i.test(String(key))
+        result[key] = revealable ? String(value[key] || "") : "[REDACTED]"
+      } else {
+        result[key] = redactApiValue(value[key], revealToken)
+      }
+    }
+    return result
+  }
+
+  function clearTokenReveal() {
+    apiCreateTokenOutput = ""
+    tokenRevealVisible = false
+    tokenRevealTimer.stop()
+  }
+
+  function canOpenResultUrl() {
+    var value = lastResult
+    var url = typeof value === "string" ? value : (value && (value.url || value.href || value.link))
+    var normalizedUrl = String(url || "").trim()
+    return /^https:\/\/(?:[a-z0-9-]+\.)*terminal\.shop(?::443)?(?:[\/?#]|$)/i.test(normalizedUrl)
+  }
+
   function replaceSettings(nextAccountId) {
     var next = ({})
     for (var key in settings) if (key !== "id") next[key] = settings[key]
@@ -221,7 +258,9 @@ Panel {
   }
 
   function selectTab(index) {
-    tabIndex = Math.max(0, Math.min(8, Number(index)))
+    var nextIndex = Math.max(0, Math.min(8, Number(index)))
+    if (nextIndex !== tabIndex) clearTokenReveal()
+    tabIndex = nextIndex
     cursorActive = true
     if (panelFlick) panelFlick.contentY = 0
     if (tabIndex === 6 && hasAccount && tokens.length === 0 && apps.length === 0)
@@ -247,9 +286,9 @@ Panel {
     runHelper("products", ["call", "product.list", "--environment", setupEnvironment], ({}))
   }
 
-  function refreshSecurity() {
+  function refreshSecurity(preserveReveal) {
     if (!activeAccountId) return
-    runHelper("tokens", ["call", "token.list", "--account-id", activeAccountId], ({}))
+    runHelper("tokens", ["call", "token.list", "--account-id", activeAccountId], ({}), "", preserveReveal === true)
   }
 
   function refreshAccountFields() {
@@ -621,7 +660,7 @@ Panel {
     var value = lastResult
     var url = typeof value === "string" ? value : (value && (value.url || value.href || value.link))
     var normalizedUrl = String(url || "").trim()
-    if (/^https?:\\/\\//i.test(normalizedUrl)) Qt.openUrlExternally(normalizedUrl)
+    if (canOpenResultUrl()) Qt.openUrlExternally(normalizedUrl)
   }
 
   function addAccount() {
@@ -639,8 +678,8 @@ Panel {
     })
   }
 
-  function runHelper(kind, args, payload, operation) {
-    var job = { kind: kind, args: args, payload: payload || ({}), operation: operation || "" }
+  function runHelper(kind, args, payload, operation, preserveTokenReveal) {
+    var job = { kind: kind, args: args, payload: payload || ({}), operation: operation || "", preserveTokenReveal: preserveTokenReveal === true }
     if (!helperPath) {
       errorText = "The Terminal Shop helper is not available from this plugin."
       return
@@ -653,6 +692,7 @@ Panel {
   }
 
   function startHelper(job) {
+    if (!job.preserveTokenReveal) clearTokenReveal()
     requestKind = job.kind
     requestOperation = job.operation || ""
     requestInput = JSON.stringify(job.payload || ({}))
@@ -695,11 +735,12 @@ Panel {
     }
 
     var data = response.data
+    var safeData = redactApiValue(data, false)
     refreshedAt = response.meta && response.meta.fetchedAt ? String(response.meta.fetchedAt) : ""
     errorText = ""
 
     if (kind === "accounts") {
-      accounts = Model.array(data)
+      accounts = Model.array(safeData)
       var selected = findAccount(activeAccountId)
       if (selected) {
         var selectedId = String(selected.id || "")
@@ -715,13 +756,13 @@ Panel {
         Qt.callLater(refreshProducts)
       }
     } else if (kind === "snapshot") {
-      snapshot = data && typeof data === "object" ? data : ({})
+      snapshot = safeData && typeof safeData === "object" ? safeData : ({})
       products = Model.array(snapshot.products)
       refreshAccountFields()
       if (!selectedAddressId && addresses.length > 0) fillAddressFields(addresses[0])
       statusText = "Updated " + Model.shortDate(refreshedAt)
     } else if (kind === "products") {
-      products = Model.array(data)
+      products = Model.array(safeData)
       statusText = products.length + " products"
     } else if (kind === "account-add") {
       setupToken = ""
@@ -729,17 +770,17 @@ Panel {
       statusText = "Account connected"
       Qt.callLater(refreshAccounts)
     } else if (kind === "tokens") {
-      tokens = Model.array(data)
+      tokens = Model.array(safeData)
       statusText = ""
       Qt.callLater(function() {
         if (activeAccountId) runHelper("apps", ["call", "app.list", "--account-id", activeAccountId], ({}))
       })
     } else if (kind === "apps") {
-      apps = Model.array(data)
+      apps = Model.array(safeData)
       statusText = ""
     } else if (kind === "operation") {
-      lastResult = data
-      apiOutput = Model.json(data)
+      lastResult = safeData
+      apiOutput = Model.json(safeData)
       statusText = requestOperation + " completed"
 
       if (requestOperation === "local.account-remove") {
@@ -747,20 +788,22 @@ Panel {
         snapshot = ({})
         Qt.callLater(refreshAccounts)
       } else if (requestOperation === "auth.metadata") {
-        apiOutput = Model.json(data)
+        apiOutput = Model.json(safeData)
       } else if (requestOperation === "view.init") {
-        snapshot = data && typeof data === "object" ? data : ({})
+        snapshot = safeData && typeof safeData === "object" ? safeData : ({})
         products = Model.array(snapshot.products)
         refreshAccountFields()
       } else if (requestOperation === "product.list") {
-        products = Model.array(data)
+        products = Model.array(safeData)
       } else if (requestOperation === "token.list") {
-        tokens = Model.array(data)
+        tokens = Model.array(safeData)
       } else if (requestOperation === "app.list") {
-        apps = Model.array(data)
+        apps = Model.array(safeData)
       } else if (requestOperation === "token.create") {
-        apiCreateTokenOutput = Model.json(data)
-        Qt.callLater(refreshSecurity)
+        apiCreateTokenOutput = Model.json(redactApiValue(data, true))
+        tokenRevealVisible = true
+        tokenRevealTimer.restart()
+        Qt.callLater(function() { refreshSecurity(true) })
       } else if (requestOperation.indexOf("token.") === 0 || requestOperation.indexOf("app.") === 0) {
         Qt.callLater(refreshSecurity)
       } else if (requestOperation !== "product.get" && requestOperation !== "address.get" && requestOperation !== "card.get" && requestOperation !== "order.get" && requestOperation !== "subscription.get") {
@@ -804,7 +847,7 @@ Panel {
       keyCatcher.forceActiveFocus()
       refreshAll()
     })
-  }
+  } else clearTokenReveal()
 
   Component.onCompleted: {
     activeAccountId = String(setting("activeAccountId", "") || "")
@@ -816,6 +859,13 @@ Panel {
     running: true
     repeat: true
     onTriggered: if (root.opened) root.refreshAll()
+  }
+
+  Timer {
+    id: tokenRevealTimer
+    interval: 30000
+    repeat: false
+    onTriggered: root.clearTokenReveal()
   }
 
   Process {
